@@ -5,74 +5,92 @@ function UIExt:Init(Hub)
     self.Notifications = {}
 end
 
---=============================
--- Multi-dropdown
---=============================
 function UIExt:CreateMultiDropdown(data)
     local Tab = data.Tab
-    local SectionName = data.Section
+    local SectionParam = data.Section
     local Name = data.Name
     local Items = data.Items or {}
     local Callback = data.Callback or function() end
 
-    local Section = Tab.Sections[SectionName] or Tab:CreateSection(SectionName)
+    assert(Tab, "[CreateMultiDropdown] Tab argument is missing or nil")
+    assert(Name, "[CreateMultiDropdown] Name argument is missing")
+    assert(Items and type(Items) == "table", "[CreateMultiDropdown] Items must be a table")
+
+    local Section
+
+    if typeof(SectionParam) == "userdata" then
+        Section = SectionParam
+    elseif typeof(SectionParam) == "string" then
+        assert(type(Tab.Sections) == "table", "[CreateMultiDropdown] Tab.Sections is not a table")
+        if Tab.Sections[SectionParam] then
+            Section = Tab.Sections[SectionParam]
+        elseif Tab.CreateSection then
+            Section = Tab:CreateSection(SectionParam)
+        else
+            error("[CreateMultiDropdown] Tab does not have CreateSection method")
+        end
+    else
+        error("[CreateMultiDropdown] Section parameter must be a Section object or a string")
+    end
+
+    -- Create container frame inside the Section
     local container = Instance.new("Frame")
-    container.Size = UDim2.new(1,0,0,25)
+    container.Size = UDim2.new(1, 0, 0, 25)
     container.BackgroundTransparency = 1
     container.Parent = Section
 
+    -- Create toggle button
     local toggleBtn = Instance.new("TextButton")
-    toggleBtn.Size = UDim2.new(1,0,0,25)
-    toggleBtn.Text = Name.." ▼"
-    toggleBtn.BackgroundColor3 = Color3.fromRGB(50,50,50)
-    toggleBtn.TextColor3 = Color3.fromRGB(255,255,255)
+    toggleBtn.Size = UDim2.new(1, 0, 0, 25)
+    toggleBtn.Text = Name .. " ▼"
+    toggleBtn.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
+    toggleBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
     toggleBtn.Parent = container
 
     local ItemsFrame = Instance.new("Frame")
-    ItemsFrame.Size = UDim2.new(1,0,0,0)
-    ItemsFrame.Position = UDim2.new(0,0,0,25)
+    ItemsFrame.Size = UDim2.new(1, 0, 0, 0)
+    ItemsFrame.Position = UDim2.new(0, 0, 0, 25)
     ItemsFrame.BackgroundTransparency = 1
     ItemsFrame.ClipsDescendants = true
     ItemsFrame.Parent = container
 
-    local tweenService = game:GetService("TweenService")
+    local TweenService = game:GetService("TweenService")
     local isOpen = false
     local selected = {}
 
-    -- Create item buttons
-    for i,item in ipairs(Items) do
+    -- Create buttons for each item
+    for i, item in ipairs(Items) do
         local btn = Instance.new("TextButton")
-        btn.Size = UDim2.new(1,0,0,20)
-        btn.Position = UDim2.new(0,0,0,(i-1)*20)
+        btn.Size = UDim2.new(1, 0, 0, 20)
+        btn.Position = UDim2.new(0, 0, 0, (i - 1) * 20)
         btn.Text = item
-        btn.BackgroundColor3 = Color3.fromRGB(50,50,50)
-        btn.TextColor3 = Color3.fromRGB(255,255,255)
+        btn.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
+        btn.TextColor3 = Color3.fromRGB(255, 255, 255)
         btn.Parent = ItemsFrame
 
         btn.MouseButton1Click:Connect(function()
-            if table.find(selected,item) then
-                table.remove(selected,table.find(selected,item))
-                btn.BackgroundColor3 = Color3.fromRGB(50,50,50)
+            if table.find(selected, item) then
+                table.remove(selected, table.find(selected, item))
+                btn.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
             else
-                table.insert(selected,item)
-                btn.BackgroundColor3 = Color3.fromRGB(0,170,255)
+                table.insert(selected, item)
+                btn.BackgroundColor3 = Color3.fromRGB(0, 170, 255)
             end
             Callback(selected)
         end)
     end
 
-    -- Toggle dropdown animation
     toggleBtn.MouseButton1Click:Connect(function()
         isOpen = not isOpen
-        local goal = {}
+        local goal
         if isOpen then
-            goal.Size = UDim2.new(1,0,0,#Items*20)
-            toggleBtn.Text = Name.." ▲"
+            goal = UDim2.new(1, 0, 0, #Items * 20)
+            toggleBtn.Text = Name .. " ▲"
         else
-            goal.Size = UDim2.new(1,0,0,0)
-            toggleBtn.Text = Name.." ▼"
+            goal = UDim2.new(1, 0, 0, 0)
+            toggleBtn.Text = Name .. " ▼"
         end
-        local tween = tweenService:Create(ItemsFrame, TweenInfo.new(0.25, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), goal)
+        local tween = TweenService:Create(ItemsFrame, TweenInfo.new(0.25, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {Size = goal})
         tween:Play()
     end)
 end
