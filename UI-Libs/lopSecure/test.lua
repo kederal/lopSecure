@@ -1093,12 +1093,9 @@ function Library:AddWindow(options)
 				return Toggle
 			end
 
-			-- Label
-
-			function Section:AddLabel(name)
 -- Label
 
-			function Section:AddLabel(name)
+function Section:AddLabel(name)
 				local Label = {
 					Name = name,
 					Type = "Label",
