@@ -1,5 +1,4 @@
 -- Library
-
 local Library = {
 	Theme = {
 		Accent = Color3.fromRGB(0, 255, 0),
@@ -22,7 +21,6 @@ local Library = {
 }
 
 -- Services
-
 local Players = game:GetService("Players")
 local UIS = game:GetService("UserInputService")
 local RS = game:GetService("RunService")
@@ -32,7 +30,6 @@ local HS = game:GetService("HttpService")
 local CG = game:GetService("CoreGui")
 
 -- Variables
-
 local Player = Players.LocalPlayer
 local Mouse = Player:GetMouse()
 
@@ -42,85 +39,64 @@ local SelfModules = {
 }
 local Storage = { Connections = {}, Tween = { Cosmetic = {} } }
 
-local ListenForInput = false
-
 -- Directory
-
 local Directory = SelfModules.Directory.Create({
-	["Vynixius UI Library"] = {
+	["lopSecure"] = {
 		"Configs",
 	},
 })
-
 Library.Settings.ConfigPath = Directory.Configs
 
 -- Misc Functions
-
 local function tween(...)
 	local args = {...}
-
 	if typeof(args[2]) ~= "string" then
 		table.insert(args, 2, "")
 	end
 
-	local tween = TS:Create(args[1], TweenInfo.new(args[3], Enum.EasingStyle.Quint), args[4])
+	local tweenObj = TS:Create(args[1], TweenInfo.new(args[3], Enum.EasingStyle.Quint), args[4])
 
 	if args[2] == "Cosmetic" then
-		Storage.Tween.Cosmetic[args[1]] = tween
-
+		Storage.Tween.Cosmetic[args[1]] = tweenObj
 		task.spawn(function()
 			task.wait(args[3])
-
-			if Storage.Tween.Cosmetic[tween] then
-				Storage.Tween.Cosmetic[tween] = nil
+			if Storage.Tween.Cosmetic[args[1]] == tweenObj then
+				Storage.Tween.Cosmetic[args[1]] = nil
 			end
 		end)
 	end
 
-	tween:Play()
+	tweenObj:Play()
 end
 
--- Functions
-
+-- ScreenGui Setup
 local ScreenGui = SelfModules.UI.Create("ScreenGui", {
-	Name = "Vynixius UI Library",
+	Name = "lopSecure",
 	ZIndexBehavior = Enum.ZIndexBehavior.Sibling,
+	Parent = CG,
 })
 
+-- Notification Function
 function Library:Notify(options, callback)
-	if Library.Notif.IsBusy == true then
-		Library.Notif.Queue[#Library.Notif.Queue + 1] = { options, callback }
+	if Library.Notif.IsBusy then
+		table.insert(Library.Notif.Queue, {options, callback})
 		return
 	end	
 
 	Library.Notif.IsBusy = true
-
-	local Notification = {
-		Type = "Notification",
-		Selection = nil,
-		Callback = callback,
-	}
+	local Notification = { Type = "Notification", Callback = callback }
 
 	Notification.Frame = SelfModules.UI.Create("Frame", {
 		Name = "Notification",
 		BackgroundTransparency = 1,
 		ClipsDescendants = true,
 		Position = UDim2.new(0, 10, 1, -66),
-		Size = UDim2.new(0, 320, 0, 42 + Library.Settings.MaxNotifLines * 14),
+		Size = UDim2.new(0, 320, 0, 100),
 
 		SelfModules.UI.Create("Frame", {
 			Name = "Topbar",
 			BackgroundColor3 = Library.Theme.TopbarColor,
 			Size = UDim2.new(1, 0, 0, 28),
-
-			SelfModules.UI.Create("Frame", {
-				Name = "Filling",
-				BackgroundColor3 = Library.Theme.TopbarColor,
-				BorderSizePixel = 0,
-				Position = UDim2.new(0, 0, 0.5, 0),
-				Size = UDim2.new(1, 0, 0.5, 0),
-			}),
-
 			SelfModules.UI.Create("TextLabel", {
 				Name = "Title",
 				BackgroundTransparency = 1,
@@ -130,26 +106,24 @@ function Library:Notify(options, callback)
 				Text = options.title or "Notification",
 				TextColor3 = Library.Theme.TextColor,
 				TextSize = 16,
-				TextXAlignment = Enum.TextXAlignment.Left,
+				TextXAlignment = "Left",
 			}),
-
 			SelfModules.UI.Create("ImageButton", {
 				Name = "Yes",
 				AnchorPoint = Vector2.new(1, 0),
 				BackgroundTransparency = 1,
 				Position = UDim2.new(1, -24, 0.5, -10),
 				Size = UDim2.new(0, 20, 0, 20),
-				Image = "http://www.roblox.com/asset/?id=7919581359",
+				Image = "rbxassetid://7919581359",
 				ImageColor3 = Library.Theme.TextColor,
 			}),
-
 			SelfModules.UI.Create("ImageButton", {
 				Name = "No",
 				AnchorPoint = Vector2.new(1, 0),
 				BackgroundTransparency = 1,
 				Position = UDim2.new(1, -2, 0.5, -10),
 				Size = UDim2.new(0, 20, 0, 20),
-				Image = "http://www.roblox.com/asset/?id=7919583990",
+				Image = "rbxassetid://7919583990",
 				ImageColor3 = Library.Theme.TextColor,
 			}),
 		}, UDim.new(0,5)),
@@ -159,76 +133,64 @@ function Library:Notify(options, callback)
 			BackgroundColor3 = Library.Theme.BackgroundColor,
 			Position = UDim2.new(0, 0, 0, 28),
 			Size = UDim2.new(1, 0, 1, -28),
-
 			SelfModules.UI.Create("TextLabel", {
 				Name = "Description",
 				BackgroundTransparency = 1,
 				Position = UDim2.new(0, 7, 0, 7),
 				Size = UDim2.new(1, -14, 1, -14),
 				Font = Enum.Font.SourceSans,
-				Text = options.text,
+				Text = options.text or "",
 				TextColor3 = Library.Theme.TextColor,
 				TextSize = 14,
 				TextWrapped = true,
-				TextXAlignment = Enum.TextXAlignment.Left,
-				TextYAlignment = Enum.TextYAlignment.Top,
-			}),
-
-			SelfModules.UI.Create("Frame", {
-				Name = "Filling",
-				BackgroundColor3 = Library.Theme.BackgroundColor,
-				BorderSizePixel = 0,
-				Size = UDim2.new(1, 0, 0, 5),
+				TextXAlignment = "Left",
+				TextYAlignment = "Top",
 			}),
 		}, UDim.new(0, 5)),
 	})
 
-    -- [Notification logic continues as normal...]
-    function Notification:GetHeight()
+	function Notification:GetHeight()
 		local desc = self.Frame.Background.Description
-		return 42 + math.round(TXS:GetTextSize(desc.Text, 14, Enum.Font.SourceSans, Vector2.new(desc.AbsoluteSize.X, Library.Settings.MaxNotifStacking * 14)).Y + 0.5)
+		local size = TXS:GetTextSize(desc.Text, 14, Enum.Font.SourceSans, Vector2.new(desc.AbsoluteSize.X, 1000))
+		return 42 + math.clamp(size.Y, 14, Library.Settings.MaxNotifStacking * 14)
 	end
 
 	function Notification:Select(bool)
 		tween(self.Frame.Topbar[bool and "Yes" or "No"], 0.1, { ImageColor3 = bool and Color3.fromRGB(75, 255, 75) or Color3.fromRGB(255, 75, 75) })
 		tween(self.Frame, 0.5, { Position = UDim2.new(0, -320, 0, self.Frame.AbsolutePosition.Y) })
-		local notifIdx = table.find(Library.Notif.Active, self)
-		if notifIdx then
-			table.remove(Library.Notif.Active, notifIdx)
-			task.delay(0.5, self.Frame.Destroy, self.Frame)
-		end
-		pcall(task.spawn, self.Callback, bool)
+		local idx = table.find(Library.Notif.Active, self)
+		if idx then table.remove(Library.Notif.Active, idx) end
+		task.delay(0.5, function() self.Frame:Destroy() end)
+		if self.Callback then task.spawn(self.Callback, bool) end
 	end
 
-	Library.Notif.Active[#Library.Notif.Active + 1] = Notification
-	Storage.Connections[Notification] = {}
 	Notification.Frame.Size = UDim2.new(0, 320, 0, Notification:GetHeight())
-	Notification.Frame.Position = UDim2.new(0, -320, 1, -Notification:GetHeight() - 10)
 	Notification.Frame.Parent = ScreenGui
+	table.insert(Library.Notif.Active, Notification)
 
 	for i, v in next, Library.Notif.Active do
 		if v ~= Notification then
-			tween(v.Frame, 0.5, { Position = v.Frame.Position - UDim2.new(0, 0, 0, Notification:GetHeight() + 10) })
+			tween(v.Frame, 0.5, { Position = v.Frame.Position - UDim2.new(0, 0, 0, Notification.Frame.AbsoluteSize.Y + 10) })
 		end
 	end
-	tween(Notification.Frame, 0.5, { Position = UDim2.new(0, 10, 1, -Notification:GetHeight() - 10) })
+	tween(Notification.Frame, 0.5, { Position = UDim2.new(0, 10, 1, -Notification.Frame.AbsoluteSize.Y - 10) })
 
-	task.spawn(function()
-		task.wait(0.5)
-		Storage.Connections[Notification].Yes = Notification.Frame.Topbar.Yes.Activated:Connect(function() Notification:Select(true) end)
-		Storage.Connections[Notification].No = Notification.Frame.Topbar.No.Activated:Connect(function() Notification:Select(false) end)
-		Library.Notif.IsBusy = false
-	end)
+	Notification.Frame.Topbar.Yes.Activated:Connect(function() Notification:Select(true) end)
+	Notification.Frame.Topbar.No.Activated:Connect(function() Notification:Select(false) end)
+	
+	Library.Notif.IsBusy = false
+	if #Library.Notif.Queue > 0 then
+		local nextNotif = table.remove(Library.Notif.Queue, 1)
+		Library:Notify(nextNotif[1], nextNotif[2])
+	end
 
 	return Notification
 end
 
+-- Window Function
 function Library:AddWindow(options)
 	local Window = {
-		Name = options.title[1].. " ".. options.title[2],
-		Type = "Window",
 		Tabs = {},
-		Sidebar = { List = {}, Toggled = false },
 		Key = options.key or Enum.KeyCode.RightControl,
 		Toggled = options.default ~= false,
 	}
@@ -237,14 +199,15 @@ function Library:AddWindow(options)
 		Name = "Window",
 		BackgroundTransparency = 1,
 		Size = UDim2.new(0, 460, 0, 497),
-		Position = UDim2.new(1, -490, 1, -527),
-		Visible = options.default ~= false,
+		Position = UDim2.new(0.5, -230, 0.5, -248),
+		Visible = Window.Toggled,
+		Parent = ScreenGui,
 
 		SelfModules.UI.Create("Frame", {
 			Name = "Topbar",
 			BackgroundColor3 = Library.Theme.TopbarColor,
 			Size = UDim2.new(1, 0, 0, 40),
-            SelfModules.UI.Create("TextLabel", {
+			SelfModules.UI.Create("TextLabel", {
 				Name = "Title",
 				AnchorPoint = Vector2.new(0.5, 0.5),
 				BackgroundTransparency = 1,
@@ -263,174 +226,145 @@ function Library:AddWindow(options)
 			BackgroundColor3 = Library.Theme.BackgroundColor,
 			Position = UDim2.new(0, 30, 0, 40),
 			Size = UDim2.new(1, -30, 1, -40),
-            SelfModules.UI.Create("Frame", {
-				Name = "Tabs",
-				BackgroundColor3 = SelfModules.UI.Color.Add(Library.Theme.BackgroundColor, Color3.fromRGB(15, 15, 15)),
-				Position = UDim2.new(0, 3, 0, 3),
-				Size = UDim2.new(1, -6, 1, -6),
-				SelfModules.UI.Create("Frame", {
-					Name = "Holder",
-					BackgroundColor3 = SelfModules.UI.Color.Add(Library.Theme.BackgroundColor, Color3.fromRGB(5, 5, 5)),
-					Position = UDim2.new(0, 1, 0, 1),
-					Size = UDim2.new(1, -2, 1, -2),
-				}, UDim.new(0, 5)),
-			}, UDim.new(0, 5)),
+			SelfModules.UI.Create("Frame", {
+				Name = "TabHolder",
+				BackgroundTransparency = 1,
+				Position = UDim2.new(0, 5, 0, 5),
+				Size = UDim2.new(1, -10, 1, -10),
+			}),
 		}, UDim.new(0, 5)),
 
-        SelfModules.UI.Create("Frame", {
+		SelfModules.UI.Create("Frame", {
 			Name = "Sidebar",
 			BackgroundColor3 = Library.Theme.SidebarColor,
 			Position = UDim2.new(0, 0, 0, 40),
 			Size = UDim2.new(0, 30, 1, -40),
 			ZIndex = 2,
-            SelfModules.UI.Create("ScrollingFrame", {
+			SelfModules.UI.Create("ScrollingFrame", {
 				Name = "List",
 				BackgroundTransparency = 1,
-				Position = UDim2.new(0, 5, 0, 35),
-				Size = UDim2.new(1, -10, 1, -40),
-				CanvasSize = UDim2.new(0,0,0,0),
+				Position = UDim2.new(0, 5, 0, 5),
+				Size = UDim2.new(1, -10, 1, -10),
 				ScrollBarThickness = 0,
 				SelfModules.UI.Create("UIListLayout", {Padding = UDim.new(0, 5)}),
-			}),
-            SelfModules.UI.Create("TextLabel", {
-				Name = "Indicator",
-				BackgroundTransparency = 1,
-				Position = UDim2.new(1, -30, 0, 0),
-				Size = UDim2.new(0, 30, 0, 30),
-				Text = "+",
-				TextColor3 = Library.Theme.TextColor,
-				TextSize = 20,
 			}),
 		}, UDim.new(0, 5))
 	})
 
-    -- Window Logic
-    SelfModules.UI.MakeDraggable(Window.Frame, Window.Frame.Topbar, 0.1)
-    Window.Frame.Parent = ScreenGui
+	SelfModules.UI.MakeDraggable(Window.Frame, Window.Frame.Topbar, 0.1)
 
-	function Window:AddTab(name, options)
-		local Tab = { Sections = {}, Button = { Selected = false } }
+	function Window:AddTab(name)
+		local Tab = { Sections = {} }
 		Tab.Frame = SelfModules.UI.Create("ScrollingFrame", {
-			Name = "Tab",
+			Name = "Tab_" .. name,
 			BackgroundTransparency = 1,
-			Size = UDim2.new(1, -10, 1, -10),
-			Position = UDim2.new(0, 5, 0, 5),
+			Size = UDim2.new(1, 0, 1, 0),
 			Visible = false,
-			ScrollBarThickness = 5,
-			SelfModules.UI.Create("UIListLayout", {Padding = UDim.new(0, 5)}),
+			ScrollBarThickness = 2,
+			Parent = Window.Frame.Background.TabHolder,
+			SelfModules.UI.Create("UIListLayout", {Padding = UDim.new(0, 5), HorizontalAlignment = "Center"}),
 		})
 
-        Tab.Button.Frame = SelfModules.UI.Create("Frame", {
+		Tab.Button = SelfModules.UI.Create("TextButton", {
 			Name = name,
-			BackgroundColor3 = Color3.fromRGB(30,30,30),
-			Size = UDim2.new(1, 0, 0, 32),
+			BackgroundColor3 = Color3.fromRGB(30, 30, 30),
+			Size = UDim2.new(1, 0, 0, 30),
+			Text = name:sub(1,1),
+			TextColor3 = Color3.fromRGB(255, 255, 255),
 			Parent = Window.Frame.Sidebar.List,
-			SelfModules.UI.Create("TextButton", {
-				Name = "Button",
-				BackgroundTransparency = 1,
-				Size = UDim2.new(1, 0, 1, 0),
-				Text = name,
-				TextColor3 = Color3.fromRGB(255,255,255),
-			})
-		}, UDim.new(0, 5))
+		}, UDim.new(0, 4))
 
-        function Tab:UpdateHeight()
-            local h = 0
-            for _, s in next, self.Sections do h = h + s:GetHeight() + 5 end
-            self.Frame.CanvasSize = UDim2.new(0,0,0,h)
-        end
-
-		function Window.Tabs:Show(tab)
-			for _, v in next, Window.Tabs do v.Frame.Visible = (v == tab) end
+		function Tab:UpdateHeight()
+			local h = 0
+			for _, s in next, self.Sections do h = h + s.Frame.AbsoluteSize.Y + 5 end
+			self.Frame.CanvasSize = UDim2.new(0, 0, 0, h)
 		end
-        
-        Tab.Button.Frame.Button.Activated:Connect(function()
-            for _, t in next, Window.Tabs do t.Frame.Visible = false end
-            Tab.Frame.Visible = true
-        end)
 
-		function Tab:AddSection(name, options)
+		Tab.Button.Activated:Connect(function()
+			for _, t in next, Window.Tabs do t.Frame.Visible = false end
+			Tab.Frame.Visible = true
+		end)
+
+		function Tab:AddSection(name)
 			local Section = { List = {}, Toggled = true }
 			Section.Frame = SelfModules.UI.Create("Frame", {
-				Name = "Section",
+				Name = "Section_" .. name,
 				BackgroundColor3 = Library.Theme.SectionColor,
 				Size = UDim2.new(1, -10, 0, 40),
 				ClipsDescendants = true,
 				Parent = Tab.Frame,
 				SelfModules.UI.Create("TextLabel", {
 					Name = "Header",
-					Text = name,
-					Size = UDim2.new(1, -40, 0, 30),
-					Position = UDim2.new(0, 10, 0, 0),
+					Text = "  " .. name,
+					Size = UDim2.new(1, 0, 0, 30),
 					BackgroundTransparency = 1,
 					TextColor3 = Library.Theme.TextColor,
 					TextXAlignment = "Left",
 				}),
-                SelfModules.UI.Create("TextLabel", {
-					Name = "Indicator",
-					Text = "+",
-					Position = UDim2.new(1, -30, 0, 0),
-					Size = UDim2.new(0, 30, 0, 30),
-					BackgroundTransparency = 1,
-					TextColor3 = Library.Theme.TextColor,
-				}),
 				SelfModules.UI.Create("Frame", {
-					Name = "List",
+					Name = "Container",
 					BackgroundTransparency = 1,
 					Position = UDim2.new(0, 5, 0, 35),
-					Size = UDim2.new(1, -10, 1, -40),
+					Size = UDim2.new(1, -10, 0, 0),
 					SelfModules.UI.Create("UIListLayout", {Padding = UDim.new(0, 5)}),
 				})
 			}, UDim.new(0, 5))
 
-			function Section:GetHeight()
+			function Section:UpdateHeight()
 				local h = 40
 				if self.Toggled then
-					for _, v in next, self.List do h = h + (v.Frame and v.Frame.AbsoluteSize.Y or 0) + 5 end
+					for _, v in next, self.List do h = h + v.Frame.AbsoluteSize.Y + 5 end
 				end
-				return h
-			end
-
-			function Section:UpdateHeight()
-				local targetH = self:GetHeight()
-				tween(self.Frame, 0.3, {Size = UDim2.new(1, -10, 0, targetH)})
-				self.Frame.Indicator.Rotation = self.Toggled and 45 or 0
+				tween(self.Frame, 0.3, {Size = UDim2.new(1, -10, 0, h)})
 				task.wait(0.3)
 				Tab:UpdateHeight()
 			end
 
 			function Section:AddMultiDropdown(name, list, options, callback)
-				local Multi = { Value = options.default or {}, Toggled = false }
+				local Multi = { Value = options.default or {}, Toggled = false, Items = {} }
 				Multi.Frame = SelfModules.UI.Create("Frame", {
 					Name = name,
 					BackgroundColor3 = Color3.fromRGB(25, 25, 25),
-					Size = UDim2.new(1, -10, 0, 32),
+					Size = UDim2.new(1, 0, 0, 32),
 					ClipsDescendants = true,
-					Parent = Section.Frame.List,
+					Parent = Section.Frame.Container,
 					SelfModules.UI.Create("TextButton", {
 						Name = "Header",
 						Size = UDim2.new(1, 0, 0, 32),
 						BackgroundTransparency = 1,
 						Text = "",
-						SelfModules.UI.Create("TextLabel", {Name = "Title", Text = name, Size = UDim2.new(0.4, 0, 1, 0), Position = UDim2.new(0,10,0,0), BackgroundTransparency = 1, TextColor3 = Library.Theme.TextColor, TextXAlignment = "Left"}),
-						SelfModules.UI.Create("TextLabel", {Name = "SelectedText", Text = "None", Size = UDim2.new(0.4, 0, 1, 0), Position = UDim2.new(1,-130,0,0), BackgroundTransparency = 1, TextColor3 = Color3.fromRGB(150,150,150), TextXAlignment = "Right"}),
-						SelfModules.UI.Create("TextLabel", {Name = "Icon", Text = "<", Size = UDim2.new(0, 30, 1, 0), Position = UDim2.new(1,-30,0,0), BackgroundTransparency = 1, TextColor3 = Color3.fromRGB(150,150,150)})
+						SelfModules.UI.Create("TextLabel", {Name = "Title", Text = "  " .. name, Size = UDim2.new(0.5, 0, 1, 0), BackgroundTransparency = 1, TextColor3 = Library.Theme.TextColor, TextXAlignment = "Left"}),
+						SelfModules.UI.Create("TextLabel", {Name = "SelectedText", Text = "None", Position = UDim2.new(0.5, -5, 0, 0), Size = UDim2.new(0.5, 0, 1, 0), BackgroundTransparency = 1, TextColor3 = Color3.fromRGB(150, 150, 150), TextXAlignment = "Right"}),
 					}),
 					SelfModules.UI.Create("Frame", {
 						Name = "Controls",
-						Size = UDim2.new(1, -20, 0, 25),
-						Position = UDim2.new(0, 10, 0, 38),
-						Visible = false,
+						Size = UDim2.new(1, -10, 0, 25),
+						Position = UDim2.new(0, 5, 0, 35),
 						BackgroundTransparency = 1,
-						SelfModules.UI.Create("TextBox", {Name = "Search", Size = UDim2.new(1, -55, 1, 0), PlaceholderText = "Search...", BackgroundColor3 = Color3.fromRGB(35,35,35), TextColor3 = Color3.fromRGB(255,255,255)}),
-						SelfModules.UI.Create("TextButton", {Name = "Clear", Text = "Clear", Position = UDim2.new(1,-50,0,0), Size = UDim2.new(0,50,1,0), BackgroundColor3 = Color3.fromRGB(45,25,25), TextColor3 = Color3.fromRGB(255,100,100)})
+						Visible = false,
+						SelfModules.UI.Create("TextBox", {
+							Name = "Search",
+							Size = UDim2.new(1, -60, 1, 0),
+							BackgroundColor3 = Color3.fromRGB(35, 35, 35),
+							PlaceholderText = "Search...",
+							TextColor3 = Color3.fromRGB(255, 255, 255),
+							Text = "",
+						}, UDim.new(0, 4)),
+						SelfModules.UI.Create("TextButton", {
+							Name = "Clear",
+							Size = UDim2.new(0, 55, 1, 0),
+							Position = UDim2.new(1, -55, 0, 0),
+							BackgroundColor3 = Color3.fromRGB(45, 25, 25),
+							Text = "Clear",
+							TextColor3 = Color3.fromRGB(255, 100, 100),
+						}, UDim.new(0, 4))
 					}),
 					SelfModules.UI.Create("Frame", {
-						Name = "List",
-						Position = UDim2.new(0, 10, 0, 70),
-						Size = UDim2.new(1, -20, 0, 0),
+						Name = "DropList",
+						Position = UDim2.new(0, 5, 0, 65),
+						Size = UDim2.new(1, -10, 0, 0),
 						BackgroundTransparency = 1,
-						SelfModules.UI.Create("UIListLayout", {Padding = UDim.new(0, 5)})
+						SelfModules.UI.Create("UIListLayout", {Padding = UDim.new(0, 3)}),
 					})
 				}, UDim.new(0, 4))
 
@@ -438,39 +372,65 @@ function Library:AddWindow(options)
 					local s = {}
 					for k, v in next, Multi.Value do if v then table.insert(s, k) end end
 					Multi.Frame.Header.SelectedText.Text = #s > 0 and table.concat(s, ", ") or "None"
-					for _, b in next, Multi.Frame.List:GetChildren() do
-						if b:IsA("TextButton") then
-							b.BackgroundColor3 = Multi.Value[b.Name] and Color3.fromRGB(45,45,45) or Color3.fromRGB(30,30,30)
-						end
+				end
+
+				local function updateDropdownHeight()
+					if not Multi.Toggled then return end
+					local visibleItems = 0
+					for _, item in next, Multi.Items do
+						if item.Visible then visibleItems = visibleItems + 1 end
 					end
+					local target = (visibleItems * 28) + 70
+					tween(Multi.Frame, 0.2, {Size = UDim2.new(1, 0, 0, target)})
+					task.wait(0.2)
+					Section:UpdateHeight()
 				end
 
 				for _, v in next, list do
-					local b = SelfModules.UI.Create("TextButton", {
-						Name = tostring(v), Text = tostring(v), Size = UDim2.new(1, 0, 0, 28),
-						BackgroundColor3 = Color3.fromRGB(30,30,30), TextColor3 = Color3.fromRGB(200,200,200),
-						Parent = Multi.Frame.List
+					local item = SelfModules.UI.Create("TextButton", {
+						Text = tostring(v),
+						Size = UDim2.new(1, 0, 0, 25),
+						BackgroundColor3 = Multi.Value[v] and Library.Theme.Accent or Color3.fromRGB(35, 35, 35),
+						TextColor3 = Color3.fromRGB(255, 255, 255),
+						Parent = Multi.Frame.DropList,
 					}, UDim.new(0, 4))
-					b.Activated:Connect(function()
-						Multi.Value[b.Name] = not Multi.Value[b.Name]
+					
+					item.Activated:Connect(function()
+						Multi.Value[v] = not Multi.Value[v]
+						item.BackgroundColor3 = Multi.Value[v] and Library.Theme.Accent or Color3.fromRGB(35, 35, 35)
 						refresh()
-						pcall(task.spawn, callback, Multi.Value)
+						if callback then task.spawn(callback, Multi.Value) end
 					end)
+					Multi.Items[v] = item
 				end
 
 				Multi.Frame.Header.Activated:Connect(function()
 					Multi.Toggled = not Multi.Toggled
 					Multi.Frame.Controls.Visible = Multi.Toggled
-					local target = Multi.Toggled and (#list * 33 + 80) or 32
-					tween(Multi.Frame, 0.3, {Size = UDim2.new(1, -10, 0, target)})
-					task.wait(0.35)
-					Section:UpdateHeight()
+					if Multi.Toggled then
+						updateDropdownHeight()
+					else
+						tween(Multi.Frame, 0.3, {Size = UDim2.new(1, 0, 0, 32)})
+						task.wait(0.3)
+						Section:UpdateHeight()
+					end
+				end)
+
+				Multi.Frame.Controls.Search:GetPropertyChangedSignal("Text"):Connect(function()
+					local query = Multi.Frame.Controls.Search.Text:lower()
+					for name, btn in next, Multi.Items do
+						btn.Visible = name:lower():find(query) ~= nil
+					end
+					updateDropdownHeight()
 				end)
 
 				Multi.Frame.Controls.Clear.Activated:Connect(function()
-					for k in next, Multi.Value do Multi.Value[k] = false end
+					for k in next, Multi.Value do 
+						Multi.Value[k] = false 
+						if Multi.Items[k] then Multi.Items[k].BackgroundColor3 = Color3.fromRGB(35, 35, 35) end
+					end
 					refresh()
-					pcall(task.spawn, callback, Multi.Value)
+					if callback then task.spawn(callback, Multi.Value) end
 				end)
 
 				table.insert(Section.List, Multi)
@@ -490,9 +450,11 @@ function Library:AddWindow(options)
 			return Section
 		end
 
+		if #Window.Tabs == 0 then Tab.Frame.Visible = true end
 		table.insert(Window.Tabs, Tab)
 		return Tab
 	end
+
 	return Window
 end
 
