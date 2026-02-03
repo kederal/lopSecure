@@ -1096,6 +1096,9 @@ function Library:AddWindow(options)
 			-- Label
 
 			function Section:AddLabel(name)
+-- Label
+
+			function Section:AddLabel(name)
 				local Label = {
 					Name = name,
 					Type = "Label",
@@ -1113,19 +1116,262 @@ function Library:AddWindow(options)
 						Size = UDim2.new(1, -2, 1, -2),
 
 						SelfModules.UI.Create("TextLabel", {
-							Name = "Label",
-							AnchorPoint = Vector2.new(0, 0.5),
+							Name = "Text",
 							BackgroundTransparency = 1,
-							Position = UDim2.new(0, 2, 0.5, 0),
-							Size = UDim2.new(1, -4, 0, 14),
+							Size = UDim2.new(1, 0, 1, 0),
 							Font = Enum.Font.SourceSans,
 							Text = name,
 							TextColor3 = Library.Theme.TextColor,
 							TextSize = 14,
-							TextWrapped = true,
-						}),
-					}, UDim.new(0, 5))
+						})
+					}, UDim.new(0, 5)),
 				}, UDim.new(0, 5))
+
+				Section.List[#Section.List + 1] = Label
+				Label.Frame.Parent = Section.Frame.List
+				return Label
+			end
+
+			-- Searchable Dropdown (Single Select)
+
+			function Section:AddDropdown(name, list, options, callback)
+				local Dropdown = {
+					Name = name,
+					Type = "Dropdown",
+					Value = options.default or list[1],
+					Toggled = false,
+					Options = list,
+				}
+
+				Dropdown.Frame = SelfModules.UI.Create("Frame", {
+					Name = name,
+					BackgroundColor3 = SelfModules.UI.Color.Add(Library.Theme.SectionColor, Color3.fromRGB(15, 15, 15)),
+					Size = UDim2.new(1, 2, 0, 32),
+					ClipsDescendants = true,
+					Parent = Section.Frame.List,
+
+					SelfModules.UI.Create("Frame", {
+						Name = "Holder",
+						BackgroundColor3 = SelfModules.UI.Color.Add(Library.Theme.SectionColor, Color3.fromRGB(5, 5, 5)),
+						Size = UDim2.new(1, -2, 0, 30),
+						Position = UDim2.new(0, 1, 0, 1),
+
+						SelfModules.UI.Create("TextLabel", {
+							Name = "Title",
+							BackgroundTransparency = 1,
+							Position = UDim2.new(0, 10, 0, 0),
+							Size = UDim2.new(1, -110, 1, 0),
+							Font = Enum.Font.SourceSans,
+							Text = name,
+							TextColor3 = Library.Theme.TextColor,
+							TextSize = 14,
+							TextXAlignment = Enum.TextXAlignment.Left,
+						}),
+
+						SelfModules.UI.Create("TextLabel", {
+							Name = "SelectedText",
+							BackgroundTransparency = 1,
+							Position = UDim2.new(1, -110, 0, 0),
+							Size = UDim2.new(0, 80, 1, 0),
+							Font = Enum.Font.SourceSans,
+							Text = tostring(Dropdown.Value),
+							TextColor3 = Color3.fromRGB(150, 150, 150),
+							TextSize = 13,
+							TextXAlignment = Enum.TextXAlignment.Right,
+						}),
+
+						SelfModules.UI.Create("TextLabel", {
+							Name = "Indicator",
+							BackgroundTransparency = 1,
+							Position = UDim2.new(1, -30, 0, 0),
+							Size = UDim2.new(0, 30, 1, 0),
+							Font = Enum.Font.SourceSans,
+							Text = "<",
+							TextColor3 = Color3.fromRGB(150, 150, 150),
+							TextSize = 14,
+						}),
+					}, UDim.new(0, 5)),
+
+					SelfModules.UI.Create("TextBox", {
+						Name = "Search",
+						Size = UDim2.new(1, -20, 0, 25),
+						Position = UDim2.new(0, 10, 0, 38),
+						PlaceholderText = "Search...",
+						Visible = false,
+						BackgroundColor3 = Color3.fromRGB(35, 35, 35),
+						TextColor3 = Color3.fromRGB(255, 255, 255),
+						TextSize = 13,
+					}, UDim.new(0, 4)),
+
+					SelfModules.UI.Create("Frame", {
+						Name = "OptionList",
+						BackgroundTransparency = 1,
+						Position = UDim2.new(0, 10, 0, 70),
+						Size = UDim2.new(1, -20, 0, 0),
+						SelfModules.UI.Create("UIListLayout", { SortOrder = Enum.SortOrder.LayoutOrder, Padding = UDim.new(0, 4) }),
+					})
+				}, UDim.new(0, 5))
+
+				for _, v in next, list do
+					local btn = SelfModules.UI.Create("TextButton", {
+						Name = tostring(v),
+						Text = tostring(v),
+						Size = UDim2.new(1, 0, 0, 28),
+						BackgroundColor3 = Color3.fromRGB(30, 30, 30),
+						TextColor3 = Color3.fromRGB(180, 180, 180),
+						Font = Enum.Font.SourceSans,
+						Parent = Dropdown.Frame.OptionList
+					}, UDim.new(0, 4))
+
+					btn.Activated:Connect(function()
+						Dropdown.Value = v
+						Dropdown.Frame.Holder.SelectedText.Text = tostring(v)
+						Dropdown.Toggled = false
+						tween(Dropdown.Frame, 0.3, { Size = UDim2.new(1, 2, 0, 32) })
+						Section:UpdateHeight()
+						pcall(task.spawn, callback, v)
+					end)
+				end
+
+				Dropdown.Frame.Search:GetPropertyChangedSignal("Text"):Connect(function()
+					local t = Dropdown.Frame.Search.Text:lower()
+					for _, child in next, Dropdown.Frame.OptionList:GetChildren() do
+						if child:IsA("TextButton") then
+							child.Visible = t == "" or child.Name:lower():find(t)
+						end
+					end
+				end)
+
+				Dropdown.Frame.Holder.InputBegan:Connect(function(input)
+					if input.UserInputType == Enum.UserInputType.MouseButton1 then
+						Dropdown.Toggled = not Dropdown.Toggled
+						Dropdown.Frame.Search.Visible = Dropdown.Toggled
+						local targetH = Dropdown.Toggled and (#list * 32 + 80) or 32
+						tween(Dropdown.Frame, 0.3, { Size = UDim2.new(1, 2, 0, targetH) })
+						tween(Dropdown.Frame.Holder.Indicator, 0.3, { Rotation = Dropdown.Toggled and -90 or 0 })
+						task.wait(0.1)
+						Section:UpdateHeight()
+					end
+				end)
+
+				Section.List[#Section.List + 1] = Dropdown
+				return Dropdown
+			end
+
+			-- Searchable Multi-Dropdown
+
+			function Section:AddMultiDropdown(name, list, options, callback)
+				local Multi = {
+					Name = name,
+					Type = "MultiDropdown",
+					Value = options.default or {},
+					Toggled = false,
+				}
+
+				Multi.Frame = SelfModules.UI.Create("Frame", {
+					Name = name,
+					BackgroundColor3 = SelfModules.UI.Color.Add(Library.Theme.SectionColor, Color3.fromRGB(15, 15, 15)),
+					Size = UDim2.new(1, 2, 0, 32),
+					ClipsDescendants = true,
+					Parent = Section.Frame.List,
+
+					SelfModules.UI.Create("Frame", {
+						Name = "Holder",
+						BackgroundColor3 = SelfModules.UI.Color.Add(Library.Theme.SectionColor, Color3.fromRGB(5, 5, 5)),
+						Size = UDim2.new(1, -2, 0, 30),
+						Position = UDim2.new(0, 1, 0, 1),
+
+						SelfModules.UI.Create("TextLabel", {
+							Name = "Title",
+							BackgroundTransparency = 1,
+							Position = UDim2.new(0, 10, 0, 0),
+							Size = UDim2.new(1, -40, 1, 0),
+							Font = Enum.Font.SourceSansBold,
+							Text = "[+] " .. name,
+							TextColor3 = Library.Theme.Accent,
+							TextSize = 14,
+							TextXAlignment = Enum.TextXAlignment.Left,
+						}),
+					}, UDim.new(0, 5)),
+
+					SelfModules.UI.Create("TextBox", {
+						Name = "Search",
+						Size = UDim2.new(1, -20, 0, 25),
+						Position = UDim2.new(0, 10, 0, 38),
+						PlaceholderText = "Filter options...",
+						Visible = false,
+						BackgroundColor3 = Color3.fromRGB(30, 30, 30),
+						TextColor3 = Color3.fromRGB(255, 255, 255),
+					}, UDim.new(0, 4)),
+
+					SelfModules.UI.Create("Frame", {
+						Name = "OptionList",
+						BackgroundTransparency = 1,
+						Position = UDim2.new(0, 10, 0, 70),
+						Size = UDim2.new(1, -20, 0, 0),
+						SelfModules.UI.Create("UIListLayout", { SortOrder = Enum.SortOrder.LayoutOrder, Padding = UDim.new(0, 4) }),
+					})
+				}, UDim.new(0, 5))
+
+				for _, v in next, list do
+					local itmName = tostring(v)
+					local item = SelfModules.UI.Create("TextButton", {
+						Name = itmName,
+						Text = "  " .. itmName,
+						Size = UDim2.new(1, 0, 0, 28),
+						BackgroundColor3 = Color3.fromRGB(35, 35, 35),
+						TextColor3 = Multi.Value[itmName] and Library.Theme.Accent or Color3.fromRGB(180, 180, 180),
+						TextXAlignment = Enum.TextXAlignment.Left,
+						Parent = Multi.Frame.OptionList
+					}, UDim.new(0, 4))
+
+					local Check = SelfModules.UI.Create("Frame", {
+						Size = UDim2.new(0, 12, 0, 12),
+						Position = UDim2.new(1, -20, 0.5, -6),
+						BackgroundColor3 = Multi.Value[itmName] and Library.Theme.Accent or Color3.fromRGB(60, 60, 60),
+						Parent = item
+					}, UDim.new(0, 2))
+
+					item.Activated:Connect(function()
+						Multi.Value[itmName] = not Multi.Value[itmName]
+						tween(Check, 0.2, { BackgroundColor3 = Multi.Value[itmName] and Library.Theme.Accent or Color3.fromRGB(60, 60, 60) })
+						item.TextColor3 = Multi.Value[itmName] and Library.Theme.Accent or Color3.fromRGB(180, 180, 180)
+						pcall(task.spawn, callback, Multi.Value)
+					end)
+				end
+
+				Multi.Frame.Search:GetPropertyChangedSignal("Text"):Connect(function()
+					local t = Multi.Frame.Search.Text:lower()
+					for _, child in next, Multi.Frame.OptionList:GetChildren() do
+						if child:IsA("TextButton") then
+							child.Visible = t == "" or child.Name:lower():find(t)
+						end
+					end
+				end)
+
+				Multi.Frame.Holder.InputBegan:Connect(function(input)
+					if input.UserInputType == Enum.UserInputType.MouseButton1 then
+						Multi.Toggled = not Multi.Toggled
+						Multi.Frame.Search.Visible = Multi.Toggled
+						local targetH = Multi.Toggled and (#list * 32 + 80) or 32
+						tween(Multi.Frame, 0.3, { Size = UDim2.new(1, 2, 0, targetH) })
+						task.wait(0.1)
+						Section:UpdateHeight()
+					end
+				end)
+
+				Section.List[#Section.List + 1] = Multi
+				return Multi
+			end
+
+			return Section
+		end
+		return Tab
+	end
+	return Window
+end
+
+return Library
 
 				-- Scripts
 
