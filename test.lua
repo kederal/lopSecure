@@ -1,5 +1,3 @@
--- Library
-
 local Library = {
 	Theme = {
 		Accent = Color3.fromRGB(0, 255, 0),
@@ -1058,10 +1056,8 @@ function Library:AddWindow(options)
 									Position = UDim2.new(0, 2, 0, 2),
 									Size = UDim2.new(0, 22, 0, 22),
 									Image = "http://www.roblox.com/asset/?id=7827504335",
-									ImageTransparency = 1,
 								}, UDim.new(0, 5)),
-							}, UDim.new(0, 5))
-						}, UDim.new(0, 5)),
+							}, UDim.new(0, 5)),
 					}, UDim.new(0, 5))
 
 					-- Functions
@@ -1792,6 +1788,7 @@ function Library:AddWindow(options)
 
 								SelfModules.UI.Create("TextLabel", {
 									Name = "Label",
+									
 									BackgroundTransparency = 1,
 									Position = UDim2.new(0, 5, 0, 8),
 									Size = UDim2.new(0.5, -15, 0, 14),
