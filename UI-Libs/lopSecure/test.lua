@@ -5,6 +5,15 @@ function UIExt:Init(Hub)
     self.Notifications = {}
 end
 
+local function getSectionFrame(Section)
+    if typeof(Section) == "userdata" then
+        return Section
+    elseif type(Section) == "table" then
+        return Section._Content or Section.Container or Section.Frame
+    end
+    return nil
+end
+
 --=============================
 -- Multi-dropdown
 --=============================
@@ -32,14 +41,17 @@ function UIExt:CreateMultiDropdown(data)
             error("[CreateMultiDropdown] Tab does not have AddSection method")
         end
     else
-        error("[CreateMultiDropdown] Section parameter must be a Section object or a string")
+        error("[CreateMultiDropdown] Section must be a Section object or string")
     end
+
+    local SectionFrame = getSectionFrame(Section)
+    assert(SectionFrame, "[CreateMultiDropdown] Cannot find section Frame")
 
     -- Container frame
     local container = Instance.new("Frame")
     container.Size = UDim2.new(1, 0, 0, 25)
     container.BackgroundTransparency = 1
-    container.Parent = Section
+    container.Parent = SectionFrame  -- parent to actual frame
 
     -- Toggle button
     local toggleBtn = Instance.new("TextButton")
@@ -49,7 +61,6 @@ function UIExt:CreateMultiDropdown(data)
     toggleBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
     toggleBtn.Parent = container
 
-    -- Items frame (collapsed)
     local ItemsFrame = Instance.new("Frame")
     ItemsFrame.Size = UDim2.new(1, 0, 0, 0)
     ItemsFrame.Position = UDim2.new(0, 0, 0, 25)
@@ -61,7 +72,6 @@ function UIExt:CreateMultiDropdown(data)
     local isOpen = false
     local selected = {}
 
-    -- Item buttons
     for i, item in ipairs(Items) do
         local btn = Instance.new("TextButton")
         btn.Size = UDim2.new(1, 0, 0, 20)
@@ -83,7 +93,6 @@ function UIExt:CreateMultiDropdown(data)
         end)
     end
 
-    -- Toggle dropdown animation
     toggleBtn.MouseButton1Click:Connect(function()
         isOpen = not isOpen
         local goal
@@ -122,8 +131,11 @@ function UIExt:CreateColorPicker(data)
             error("[CreateColorPicker] Tab does not have AddSection method")
         end
     else
-        error("[CreateColorPicker] Section must be a Section object or a string")
+        error("[CreateColorPicker] Section must be a Section object or string")
     end
+
+    local SectionFrame = getSectionFrame(Section)
+    assert(SectionFrame, "[CreateColorPicker] Cannot find section Frame")
 
     -- Color picker button
     local btn = Instance.new("TextButton")
@@ -131,7 +143,7 @@ function UIExt:CreateColorPicker(data)
     btn.Text = Name
     btn.BackgroundColor3 = Default
     btn.TextColor3 = Color3.fromRGB(255, 255, 255)
-    btn.Parent = Section
+    btn.Parent = SectionFrame
 
     btn.MouseButton1Click:Connect(function()
         local ScreenGui = Instance.new("ScreenGui", game:GetService("Players").LocalPlayer:WaitForChild("PlayerGui"))
