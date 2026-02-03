@@ -1,3 +1,5 @@
+-- Library
+
 local Library = {
 	Theme = {
 		Accent = Color3.fromRGB(0, 255, 0),
@@ -1785,6 +1787,7 @@ function Library:AddWindow(options)
 								Name = "Holder",
 								BackgroundTransparency = 1,
 								Size = UDim2.new(1, 0, 0, 40),
+
 
 
 								SelfModules.UI.Create("TextLabel", {
