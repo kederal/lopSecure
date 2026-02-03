@@ -5,6 +5,9 @@ function UIExt:Init(Hub)
     self.Notifications = {}
 end
 
+--=============================
+-- Multi-dropdown
+--=============================
 function UIExt:CreateMultiDropdown(data)
     local Tab = data.Tab
     local SectionParam = data.Section
@@ -16,30 +19,29 @@ function UIExt:CreateMultiDropdown(data)
     assert(Name, "[CreateMultiDropdown] Name argument is missing")
     assert(Items and type(Items) == "table", "[CreateMultiDropdown] Items must be a table")
 
+    -- Determine Section object
     local Section
-
     if typeof(SectionParam) == "userdata" then
         Section = SectionParam
     elseif typeof(SectionParam) == "string" then
-        assert(type(Tab.Sections) == "table", "[CreateMultiDropdown] Tab.Sections is not a table")
-        if Tab.Sections[SectionParam] then
+        if Tab.Sections and Tab.Sections[SectionParam] then
             Section = Tab.Sections[SectionParam]
-        elseif Tab.CreateSection then
-            Section = Tab:CreateSection(SectionParam)
+        elseif Tab.AddSection then
+            Section = Tab:AddSection(SectionParam)
         else
-            error("[CreateMultiDropdown] Tab does not have CreateSection method")
+            error("[CreateMultiDropdown] Tab does not have AddSection method")
         end
     else
         error("[CreateMultiDropdown] Section parameter must be a Section object or a string")
     end
 
-    -- Create container frame inside the Section
+    -- Container frame
     local container = Instance.new("Frame")
     container.Size = UDim2.new(1, 0, 0, 25)
     container.BackgroundTransparency = 1
     container.Parent = Section
 
-    -- Create toggle button
+    -- Toggle button
     local toggleBtn = Instance.new("TextButton")
     toggleBtn.Size = UDim2.new(1, 0, 0, 25)
     toggleBtn.Text = Name .. " ▼"
@@ -47,6 +49,7 @@ function UIExt:CreateMultiDropdown(data)
     toggleBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
     toggleBtn.Parent = container
 
+    -- Items frame (collapsed)
     local ItemsFrame = Instance.new("Frame")
     ItemsFrame.Size = UDim2.new(1, 0, 0, 0)
     ItemsFrame.Position = UDim2.new(0, 0, 0, 25)
@@ -58,7 +61,7 @@ function UIExt:CreateMultiDropdown(data)
     local isOpen = false
     local selected = {}
 
-    -- Create buttons for each item
+    -- Item buttons
     for i, item in ipairs(Items) do
         local btn = Instance.new("TextButton")
         btn.Size = UDim2.new(1, 0, 0, 20)
@@ -80,6 +83,7 @@ function UIExt:CreateMultiDropdown(data)
         end)
     end
 
+    -- Toggle dropdown animation
     toggleBtn.MouseButton1Click:Connect(function()
         isOpen = not isOpen
         local goal
@@ -100,63 +104,79 @@ end
 --=============================
 function UIExt:CreateColorPicker(data)
     local Tab = data.Tab
-    local SectionName = data.Section
+    local SectionParam = data.Section
     local Name = data.Name
-    local Default = data.Default or Color3.fromRGB(255,255,255)
+    local Default = data.Default or Color3.fromRGB(255, 255, 255)
     local Callback = data.Callback or function() end
 
-    local Section = Tab.Sections[SectionName] or Tab:CreateSection(SectionName)
+    -- Determine Section object
+    local Section
+    if typeof(SectionParam) == "userdata" then
+        Section = SectionParam
+    elseif typeof(SectionParam) == "string" then
+        if Tab.Sections and Tab.Sections[SectionParam] then
+            Section = Tab.Sections[SectionParam]
+        elseif Tab.AddSection then
+            Section = Tab:AddSection(SectionParam)
+        else
+            error("[CreateColorPicker] Tab does not have AddSection method")
+        end
+    else
+        error("[CreateColorPicker] Section must be a Section object or a string")
+    end
+
+    -- Color picker button
     local btn = Instance.new("TextButton")
-    btn.Size = UDim2.new(1,0,0,25)
+    btn.Size = UDim2.new(1, 0, 0, 25)
     btn.Text = Name
     btn.BackgroundColor3 = Default
-    btn.TextColor3 = Color3.fromRGB(255,255,255)
+    btn.TextColor3 = Color3.fromRGB(255, 255, 255)
     btn.Parent = Section
 
     btn.MouseButton1Click:Connect(function()
-        -- Simple Color Picker Dialog
         local ScreenGui = Instance.new("ScreenGui", game:GetService("Players").LocalPlayer:WaitForChild("PlayerGui"))
         local Picker = Instance.new("Frame")
-        Picker.Size = UDim2.new(0,200,0,200)
-        Picker.Position = UDim2.new(0.5,-100,0.5,-100)
-        Picker.BackgroundColor3 = Color3.fromRGB(40,40,40)
+        Picker.Size = UDim2.new(0, 200, 0, 200)
+        Picker.Position = UDim2.new(0.5, -100, 0.5, -100)
+        Picker.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
         Picker.Parent = ScreenGui
 
         local rSlider = Instance.new("TextBox")
-        rSlider.Size = UDim2.new(0,180,0,25)
-        rSlider.Position = UDim2.new(0,10,0,10)
-        rSlider.PlaceholderText = "R: "..math.floor(Default.R*255)
-        rSlider.BackgroundColor3 = Color3.fromRGB(50,50,50)
-        rSlider.TextColor3 = Color3.fromRGB(255,255,255)
+        rSlider.Size = UDim2.new(0, 180, 0, 25)
+        rSlider.Position = UDim2.new(0, 10, 0, 10)
+        rSlider.PlaceholderText = "R: " .. math.floor(Default.R * 255)
+        rSlider.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
+        rSlider.TextColor3 = Color3.fromRGB(255, 255, 255)
         rSlider.Parent = Picker
 
         local gSlider = rSlider:Clone()
-        gSlider.PlaceholderText = "G: "..math.floor(Default.G*255)
-        gSlider.Position = UDim2.new(0,10,0,45)
+        gSlider.PlaceholderText = "G: " .. math.floor(Default.G * 255)
+        gSlider.Position = UDim2.new(0, 10, 0, 45)
         gSlider.Parent = Picker
 
         local bSlider = rSlider:Clone()
-        bSlider.PlaceholderText = "B: "..math.floor(Default.B*255)
-        bSlider.Position = UDim2.new(0,10,0,80)
+        bSlider.PlaceholderText = "B: " .. math.floor(Default.B * 255)
+        bSlider.Position = UDim2.new(0, 10, 0, 80)
         bSlider.Parent = Picker
 
         local confirm = Instance.new("TextButton")
-        confirm.Size = UDim2.new(0,180,0,25)
-        confirm.Position = UDim2.new(0,10,0,115)
+        confirm.Size = UDim2.new(0, 180, 0, 25)
+        confirm.Position = UDim2.new(0, 10, 0, 115)
         confirm.Text = "Confirm"
-        confirm.BackgroundColor3 = Color3.fromRGB(0,170,255)
-        confirm.TextColor3 = Color3.fromRGB(255,255,255)
+        confirm.BackgroundColor3 = Color3.fromRGB(0, 170, 255)
+        confirm.TextColor3 = Color3.fromRGB(255, 255, 255)
         confirm.Parent = Picker
 
         confirm.MouseButton1Click:Connect(function()
-            local r = tonumber(rSlider.Text) or Default.R*255
-            local g = tonumber(gSlider.Text) or Default.G*255
-            local b = tonumber(bSlider.Text) or Default.B*255
-            local color = Color3.fromRGB(r,g,b)
+            local r = tonumber(rSlider.Text) or Default.R * 255
+            local g = tonumber(gSlider.Text) or Default.G * 255
+            local b = tonumber(bSlider.Text) or Default.B * 255
+            local color = Color3.fromRGB(r, g, b)
             btn.BackgroundColor3 = color
             Callback(color)
             Picker:Destroy()
         end)
     end)
 end
+
 return UIExt
